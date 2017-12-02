@@ -10,14 +10,19 @@
 	<body>
 		<script>
 			let picture;
-			window.onload = onload;
 
 			AFRAME.registerComponent('app', {
 				schema: {type: 'string'},
 				init: function () {
-					console.log('INIT')
 					picture = document.querySelector("#picture");
-					getExif(document.querySelector("#picture-img"));
+
+					let img = new Image();
+
+					img.onload = function () {
+						getExif(img);
+					}
+
+					img.src = "img/china-pano-18.jpg";
 				}
 			});
 
@@ -26,7 +31,6 @@
 					let width = EXIF.getTag(this, "PixelXDimension");
 					let height = EXIF.getTag(this, "PixelYDimension");
 					let focal = EXIF.getTag(this, "FocalLengthIn35mmFilm");
-					let makeAndModel = document.getElementById("makeAndModel");
 					computeAttributes(width, height, focal);
 				});
 
@@ -83,7 +87,6 @@ Hyperfocal Distance             : 4.99 m
 				console.log(fov, fovPhi, fovTheta, phiStart, thetaStart);
 			}
 		</script>
-		<img style="display: none;" id="picture-img" src="img/china-pano-18.jpg">
 		<a-scene app>
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->

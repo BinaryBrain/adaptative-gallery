@@ -7,39 +7,65 @@
 		<script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
 	</head>
 	<body>
-		<a-scene>
+		<script>
+			let picture = 'asd'
+/*
+X Resolution                    : 350
+Y Resolution                    : 350
+Panorama Frame Width            : 800
+Panorama Frame Height           : 3056
+Panorama Source Width           : 8192
+Panorama Source Height          : 1856
+Lens Format                     : APS-C
+Field Of View                   : 43.6 deg
+Focal Length                    : 30.0 mm (35 mm equivalent: 45.0 mm)
+Hyperfocal Distance             : 4.99 m
+*/
+
+			AFRAME.registerComponent('app', {
+				schema: {type: 'string'},
+				init: function () {
+					picture = document.querySelector("#picture");
+
+					let focal = 30;
+					let apsc = [23.6, 15.6];
+
+					function diag(a, b) {
+						return Math.sqrt(a*a + b*b);
+					}
+
+					let format = [8192, 1856];
+
+					function getVirtualApsc(apsc, format) {
+						return [format[0] * apsc[1] / format[1], apsc[1]];
+					}
+
+					function getFOV(apsc) {
+						return 2 * Math.atan(diag(apsc[0], apsc[1]) / (2 * focal)) * 180 / Math.PI;
+					}
+
+					let virtualApsc = getVirtualApsc(apsc, format);
+					let fov = getFOV(virtualApsc);
+					let fovPhi = 2 * Math.atan(virtualApsc[0] / (2 * focal)) * 180 / Math.PI;
+					let fovTheta = 2 * Math.atan(virtualApsc[1] / (2 * focal)) * 180 / Math.PI;
+					let phiStart = - (90 + (fovPhi / 2));
+					let thetaStart = (180 - fovTheta) / 2;
+
+					picture.setAttribute('phi-start', phiStart);
+					picture.setAttribute('phi-length', fovPhi);
+					picture.setAttribute('theta-start', thetaStart);
+					picture.setAttribute('theta-length', fovTheta);
+
+					console.log(fov, fovPhi, fovTheta, phiStart, thetaStart);
+				}
+			});
+		</script>
+		<a-scene app>
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->
 			<!--<a-sphere src="img/china-18.jpg" side="back" radius="3900" phi-start="-123.25" phi-length="66.5" theta-start="66.57500" theta-length="46.85"></a-sphere>-->
-			<a-sphere src="img/china-pano-18.jpg" side="back" radius="3900" phi-start="-152.4" phi-length="124.79" theta-start="66.57500" theta-length="46.85"></a-sphere>
+			<a-sphere id="picture" src="img/china-pano-18.jpg" side="back" radius="3900"></a-sphere>
 			<!--<img id="city" crossorigin="anonymous" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg">-->
 		</a-scene>
-		<script>
-			let focal = 18;
-			let apsc = [23.6, 15.6];
-
-			function diag(a, b) {
-				return Math.sqrt(a*a + b*b);
-			}
-
-			let format = [8192, 1856];
-
-			function getVirtualApsc(apsc, format) {
-				return [format[0] * apsc[1] / format[1], apsc[1]];
-			}
-
-			function getFOV(apsc) {
-				return 2 * Math.atan(diag(apsc[0], apsc[1]) / (2 * focal)) * 180 / Math.PI;
-			}
-
-			let virtualApsc = getVirtualApsc(apsc, format);
-			let fov = getFOV(virtualApsc);
-			let fovPhi = 2 * Math.atan(virtualApsc[0] / (2 * focal)) * 180 / Math.PI;
-			let fovTheta = 2 * Math.atan(virtualApsc[1] / (2 * focal)) * 180 / Math.PI;
-			let phiStart = - (90 + (fovPhi / 2));
-			let thetaStart = (180 - fovTheta) / 2;
-			
-			console.log(fov, fovPhi, fovTheta, phiStart, thetaStart)
-		</script>
 	</body>
 </html>

@@ -5,10 +5,25 @@
 		<title>Hello, World! - A-Frame</title>
 		<meta name="description" content="Hello, World! - A-Frame">
 		<script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
+		<script src="https://unpkg.com/exif-js"></script>
 	</head>
 	<body>
 		<script>
-			let picture = 'asd'
+			function getExif(img) {
+				EXIF.getData(img, function() {
+					let width = EXIF.getTag(this, "PixelXDimension");
+					let height = EXIF.getTag(this, "PixelYDimension");
+					let focal = EXIF.getTag(this, "FocalLengthIn35mmFilm");
+					let makeAndModel = document.getElementById("makeAndModel");
+					computeAttributes(width, height, focal);
+				});
+
+				EXIF.getData(img, function() {
+					let allMetaData = EXIF.getAllTags(this);
+					let allMetaDataSpan = document.getElementById("allMetaDataSpan");
+					//console.log(123, JSON.stringify(allMetaData, null, "\t"));
+				});
+			}
 /*
 X Resolution                    : 350
 Y Resolution                    : 350
@@ -22,44 +37,51 @@ Focal Length                    : 30.0 mm (35 mm equivalent: 45.0 mm)
 Hyperfocal Distance             : 4.99 m
 */
 
+			let picture;
 			AFRAME.registerComponent('app', {
 				schema: {type: 'string'},
 				init: function () {
 					picture = document.querySelector("#picture");
-
-					let focal = 30;
-					let apsc = [23.6, 15.6];
-
-					function diag(a, b) {
-						return Math.sqrt(a*a + b*b);
-					}
-
-					let format = [8192, 1856];
-
-					function getVirtualApsc(apsc, format) {
-						return [format[0] * apsc[1] / format[1], apsc[1]];
-					}
-
-					function getFOV(apsc) {
-						return 2 * Math.atan(diag(apsc[0], apsc[1]) / (2 * focal)) * 180 / Math.PI;
-					}
-
-					let virtualApsc = getVirtualApsc(apsc, format);
-					let fov = getFOV(virtualApsc);
-					let fovPhi = 2 * Math.atan(virtualApsc[0] / (2 * focal)) * 180 / Math.PI;
-					let fovTheta = 2 * Math.atan(virtualApsc[1] / (2 * focal)) * 180 / Math.PI;
-					let phiStart = - (90 + (fovPhi / 2));
-					let thetaStart = (180 - fovTheta) / 2;
-
-					picture.setAttribute('phi-start', phiStart);
-					picture.setAttribute('phi-length', fovPhi);
-					picture.setAttribute('theta-start', thetaStart);
-					picture.setAttribute('theta-length', fovTheta);
-
-					console.log(fov, fovPhi, fovTheta, phiStart, thetaStart);
+					getExif(document.querySelector("#picture-img"));
 				}
 			});
+
+			function computeAttributes(width, height, focal) {
+				console.log(width, height, focal);
+				let format = [width, height];
+
+				// let apsc = [23.6, 15.6];
+				let fullFrame = [36, 24];
+
+				function diag(a, b) {
+					return Math.sqrt(a*a + b*b);
+				}
+
+
+				function getVirtualSensor(sensor, format) {
+					return [format[0] * sensor[1] / format[1], sensor[1]];
+				}
+
+				function getFOV(sensor) {
+					return 2 * Math.atan(diag(sensor[0], sensor[1]) / (2 * focal)) * 180 / Math.PI;
+				}
+
+				let virtualSensor = getVirtualSensor(fullFrame, format);
+				let fov = getFOV(virtualSensor);
+				let fovPhi = 2 * Math.atan(virtualSensor[0] / (2 * focal)) * 180 / Math.PI;
+				let fovTheta = 2 * Math.atan(virtualSensor[1] / (2 * focal)) * 180 / Math.PI;
+				let phiStart = - (90 + (fovPhi / 2));
+				let thetaStart = (180 - fovTheta) / 2;
+
+				picture.setAttribute('phi-start', phiStart);
+				picture.setAttribute('phi-length', fovPhi);
+				picture.setAttribute('theta-start', thetaStart);
+				picture.setAttribute('theta-length', fovTheta);
+
+				console.log(fov, fovPhi, fovTheta, phiStart, thetaStart);
+			}
 		</script>
+		<img style="display: none;" id="picture-img" src="img/china-pano-18.jpg">
 		<a-scene app>
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->

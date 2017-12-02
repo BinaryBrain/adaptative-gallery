@@ -9,6 +9,18 @@
 	</head>
 	<body>
 		<script>
+			let picture;
+			window.onload = onload;
+
+			AFRAME.registerComponent('app', {
+				schema: {type: 'string'},
+				init: function () {
+					console.log('INIT')
+					picture = document.querySelector("#picture");
+					getExif(document.querySelector("#picture-img"));
+				}
+			});
+
 			function getExif(img) {
 				EXIF.getData(img, function() {
 					let width = EXIF.getTag(this, "PixelXDimension");
@@ -37,15 +49,6 @@ Focal Length                    : 30.0 mm (35 mm equivalent: 45.0 mm)
 Hyperfocal Distance             : 4.99 m
 */
 
-			let picture;
-			AFRAME.registerComponent('app', {
-				schema: {type: 'string'},
-				init: function () {
-					picture = document.querySelector("#picture");
-					getExif(document.querySelector("#picture-img"));
-				}
-			});
-
 			function computeAttributes(width, height, focal) {
 				console.log(width, height, focal);
 				let format = [width, height];
@@ -56,7 +59,6 @@ Hyperfocal Distance             : 4.99 m
 				function diag(a, b) {
 					return Math.sqrt(a*a + b*b);
 				}
-
 
 				function getVirtualSensor(sensor, format) {
 					return [format[0] * sensor[1] / format[1], sensor[1]];

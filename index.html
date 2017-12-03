@@ -11,19 +11,29 @@
 	<body>
 		<script>
 			let picture;
+			let camera;
 
 			let imagesSrc = [
-				"img/street.jpg",
 				"img/city.jpg",
-				"img/girl.jpg",
 				"img/huge.jpg",
+				"img/street.jpg",
+				"img/girl.jpg",
 				"img/tower.jpg",
 			];
+
+			let zooms = [
+				0,
+				0,
+				-2,
+				-9,
+				0,
+			]
 
 			AFRAME.registerComponent('app', {
 				schema: {type: 'string'},
 				init: function () {
 					picture = document.querySelector("#picture");
+					camera = document.querySelector('#camera');
 					initGallery(imagesSrc);
 				}
 			});
@@ -88,14 +98,14 @@ Hyperfocal Distance             : 4.99 m
 
 				let virtualSensor = getVirtualSensor(fullFrame, format);
 				// let fov = getFOV(virtualSensor);
-				let fovPhi = 2 * Math.atan(virtualSensor[0] / (2 * focal)) * 180 / Math.PI;
+				let phiLength = 2 * Math.atan(virtualSensor[0] / (2 * focal)) * 180 / Math.PI;
 				if (virtualSensor[0] / (2 * focal) > Math.PI / 2) {
-					fovPhi += 180;
+					phiLength += 180;
 				}
 
-				let fovTheta = 2 * Math.atan(virtualSensor[1] / (2 * focal)) * 180 / Math.PI;
-				let phiStart = - 90 - (fovPhi / 2);
-				let thetaStart = 90 - fovTheta / 2;
+				let thetaLength = 2 * Math.atan(virtualSensor[1] / (2 * focal)) * 180 / Math.PI;
+				let phiStart = - 90 - (phiLength / 2);
+				let thetaStart = 90 - thetaLength / 2;
 
 				switch (orientation) {
 					case 8:
@@ -113,21 +123,44 @@ Hyperfocal Distance             : 4.99 m
 				}
 
 				picture.setAttribute('phi-start', phiStart);
-				picture.setAttribute('phi-length', fovPhi);
+				picture.setAttribute('phi-length', phiLength);
 				picture.setAttribute('theta-start', thetaStart);
-				picture.setAttribute('theta-length', fovTheta);
+				picture.setAttribute('theta-length', thetaLength);
 				picture.setAttribute('src', url);
 
-				console.log(fovPhi, fovTheta, phiStart, thetaStart);
+				console.log(phiLength, thetaLength, phiStart, thetaStart);
+
+				// sw = 2 * r * sin(phiLength / 2)
+				// distance = (sw / 2) / tan(camera.fov / 2)
+
+				camera.fov = 80; // FIXME
+				// let s = document.querySelector('a-scene').clientHeight / 2;
+				// let d = s / Math.tan(camera.fov * Math.PI / 360);
+				// let b = s / (2 * Math.tan(phiLength * Math.PI / 720));
+				// let tan = Math.tan(camera.fov * Math.PI / 180);
+				// let shift = (r * Math.sin(thetaLength * Math.PI / 360)) / tan;
+				let r = picture.getAttribute('radius') * 1;
+				let oppH = Math.sin(thetaLength * Math.PI / 360) * r;
+				let oppV = Math.sin(phiLength * Math.PI / 360) * r;
+				let shiftH = Math.sin(thetaLength * Math.PI / 360) * oppH;
+				let shiftV = Math.sin(phiLength * Math.PI / 360) * oppV;
+				let d = r * Math.sin(phiLength * Math.PI / 360) / Math.tan(camera.fov * Math.PI / 360);
+				let shift = -r * (1 - Math.sin(phiLength * Math.PI / 360) / Math.tan(camera.fov * Math.PI / 360));
+
+				// document.querySelector('#s1').setAttribute('position', '0 0 ' + (-r));
+				// document.querySelector('#s3').setAttribute('position', oppH + ' 0 ' + (-r + shiftH));
+				// document.querySelector('#s2').setAttribute('position', oppH + ' 0 ' + (-r));
+				// document.querySelector('#s4').setAttribute('position', oppH + ' ' + oppV + ' ' + (-r));
+
+				console.log('shift:', shift)
+				// camera.setAttribute('position', '0 0 ' + shift);
 			}
 
 			function computeFitZoom() {
-				let camera = document.querySelector('#camera');
 				console.log(camera.fov);
 			}
 
 			function resetCameraRotation() {
-				let camera = document.querySelector('#camera');
 				camera.setAttribute('rotation', '0 0 0');
 			}
 </script>
@@ -188,6 +221,7 @@ Hyperfocal Distance             : 4.99 m
 		Gallery.currentIndex--;
 		// Gallery.caption.innerText = Gallery.altTextes[Gallery.currentIndex];
 		loadPicture(Gallery.photosSrc[Gallery.currentIndex]);
+		camera.setAttribute('position', '0 0 ' + zooms[Gallery.currentIndex]); // FIXME dirty
 
 		updateBtnDisplay();
 	}
@@ -201,6 +235,7 @@ Hyperfocal Distance             : 4.99 m
 		Gallery.currentIndex++;
 		// Gallery.caption.innerText = Gallery.altTextes[Gallery.currentIndex];
 		loadPicture(Gallery.photosSrc[Gallery.currentIndex]);
+		camera.setAttribute('position', '0 0 ' + zooms[Gallery.currentIndex]); // FIXME dirty
 
 		updateBtnDisplay();
 	}
@@ -216,6 +251,10 @@ Hyperfocal Distance             : 4.99 m
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
 			<a-sky color="#050505"></a-sky>
 			<a-camera id="camera" user-height="0" wasd-controls-enabled="false"></a-camera>
+			<a-sphere id="s1" color="#ff0000" position="0 0 0" radius="0.03"></a-sphere>
+			<a-sphere id="s2" color="#ff0000" position="0 0 0" radius="0.03"></a-sphere>
+			<a-sphere id="s3" color="#ff0000" position="0 0 0" radius="0.05"></a-sphere>
+			<a-sphere id="s4" color="#ff0000" position="0 0 0" radius="0.03"></a-sphere>
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->
 			<!--<a-sphere src="img/china-18.jpg" side="back" radius="3900" phi-start="-123.25" phi-length="66.5" theta-start="66.57500" theta-length="46.85"></a-sphere>-->
 			<a-sphere id="picture" side="double" radius="10" scale="-1 1 1" shader="flat"></a-sphere>

@@ -6,17 +6,25 @@
 		<meta name="description" content="Hello, World! - A-Frame">
 		<script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
 		<script src="https://unpkg.com/exif-js"></script>
+		<link rel="stylesheet" type="text/css" href="style.css" media="all"></link>
 	</head>
 	<body>
 		<script>
 			let picture;
-			let imgSrc = "img/huge.jpg"
+
+			let imagesSrc = [
+				"img/street.jpg",
+				"img/city.jpg",
+				"img/girl.jpg",
+				"img/huge.jpg",
+				"img/tower.jpg",
+			];
 
 			AFRAME.registerComponent('app', {
 				schema: {type: 'string'},
 				init: function () {
 					picture = document.querySelector("#picture");
-					loadPicture(imgSrc);
+					initGallery(imagesSrc);
 				}
 			});
 
@@ -28,6 +36,7 @@
 				}
 
 				img.src = url;
+				resetCameraRotation();
 			}
 
 			function getExif(img, url) {
@@ -85,15 +94,15 @@ Hyperfocal Distance             : 4.99 m
 				}
 
 				let fovTheta = 2 * Math.atan(virtualSensor[1] / (2 * focal)) * 180 / Math.PI;
-				let phiStart = 90 - (fovPhi / 2);
+				let phiStart = - 90 - (fovPhi / 2);
 				let thetaStart = 90 - fovTheta / 2;
 
 				switch (orientation) {
 					case 8:
-						picture.setAttribute("rotation", "0 0 -90");
+						picture.setAttribute("rotation", "0 0 90");
 						break;
 					case 6:
-						picture.setAttribute("rotation", "0 0 90");
+						picture.setAttribute("rotation", "0 0 -90");
 						break;
 					case 3:
 						picture.setAttribute("rotation", "0 0 180");
@@ -116,14 +125,99 @@ Hyperfocal Distance             : 4.99 m
 				let camera = document.querySelector('#camera');
 				console.log(camera.fov);
 			}
-		</script>
+
+			function resetCameraRotation() {
+				let camera = document.querySelector('#camera');
+				camera.setAttribute('rotation', '0 0 0');
+			}
+</script>
+<script>
+	var Gallery = {}
+
+	function initGallery(imagesSrc) {
+		Gallery = {
+			prevBtn: document.querySelector('#left-arrow'),
+			nextBtn: document.querySelector('#right-arrow'),
+// 			caption: document.querySelector('#fullscreen-photo figcaption'),
+// 			close: document.querySelector('#fullscreen-photo .close'),
+//			thumbnails: document.querySelectorAll('#photos .thumbnail'),
+//			thumbnailsSrc: [],
+//			altTextes: [],
+			photosSrc: imagesSrc,
+			currentIndex: 0,
+			size: imagesSrc.length,
+//			hideCursorInterval: null,
+		}
+
+		addEvents();
+		loadPicture(Gallery.photosSrc[0]);
+	}
+
+	function addEvents() {
+		document.addEventListener('keydown', function (event) {
+			var key = event.which || event.keyCode || 0;
+			if (key === 37) {
+				prev();
+			} else if (key === 39) {
+				next();
+			}
+		})
+
+		Gallery.prevBtn.addEventListener('click', function (event) {
+			event.preventDefault();
+			prev();
+		});
+
+		Gallery.nextBtn.addEventListener('click', function (event) {
+			event.preventDefault();
+			next();
+		});
+
+		// Gallery.close.addEventListener('click', function (event) {
+		// 	quitFullscreen();
+		// });
+	}
+
+	function prev() {
+		if (Gallery.currentIndex <= 0) {
+			return;
+		}
+
+		// Gallery.fullscreenPhoto.src = Gallery.photosSrc[Gallery.currentIndex - 1];
+		Gallery.currentIndex--;
+		// Gallery.caption.innerText = Gallery.altTextes[Gallery.currentIndex];
+		loadPicture(Gallery.photosSrc[Gallery.currentIndex]);
+
+		updateBtnDisplay();
+	}
+
+	function next() {
+		if (Gallery.currentIndex >= Gallery.size - 1) {
+			return;
+		}
+
+		// Gallery.fullscreenPhoto.src = Gallery.photosSrc[Gallery.currentIndex + 1];
+		Gallery.currentIndex++;
+		// Gallery.caption.innerText = Gallery.altTextes[Gallery.currentIndex];
+		loadPicture(Gallery.photosSrc[Gallery.currentIndex]);
+
+		updateBtnDisplay();
+	}
+
+	function updateBtnDisplay() {
+		Gallery.prevBtn.style.display = (Gallery.currentIndex > 0) ? "block" : "none";
+		Gallery.nextBtn.style.display = (Gallery.currentIndex < Gallery.size - 1) ? "block" : "none";
+	}
+</script>
 		<a-scene app>
+			<div id="left-arrow"></div>
+			<div id="right-arrow"></div>
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
 			<a-sky color="#050505"></a-sky>
-			<a-camera id="camera" user-height="0"></a-camera>
+			<a-camera id="camera" user-height="0" wasd-controls-enabled="false"></a-camera>
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->
 			<!--<a-sphere src="img/china-18.jpg" side="back" radius="3900" phi-start="-123.25" phi-length="66.5" theta-start="66.57500" theta-length="46.85"></a-sphere>-->
-			<a-sphere id="picture" side="double" radius="10" scale="-1 1 -1"></a-sphere>
+			<a-sphere id="picture" side="double" radius="10" scale="-1 1 1"></a-sphere>
 			<!--<img id="city" crossorigin="anonymous" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg">-->
 		</a-scene>
 	</body>

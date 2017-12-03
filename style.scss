@@ -1,0 +1,28 @@
+#left-arrow, #right-arrow {
+    position: absolute;
+    z-index: 10;
+    bottom: 50%;
+    cursor: pointer;
+    font-size: 50px;
+    color: #444444;
+
+    &:hover {
+        color: white;
+    }
+}
+
+#left-arrow {
+    left: 40px;
+
+    &:after {
+        content: '<';
+    }
+}
+
+#right-arrow {
+    right: 40px;
+
+    &:after {
+        content: '>';
+    }
+}

@@ -185,6 +185,8 @@ Hyperfocal Distance             : 4.99 m
 		addEvents();
 		updateBtnDisplay();
 		loadPicture(Gallery.photosSrc[0]);
+
+		setInterval(next, 10000);
 	}
 
 	function addEvents() {
@@ -228,6 +230,7 @@ Hyperfocal Distance             : 4.99 m
 
 	function next() {
 		if (Gallery.currentIndex >= Gallery.size - 1) {
+			Gallery.currentIndex = -1;
 			return;
 		}
 

@@ -10,34 +10,39 @@
 	<body>
 		<script>
 			let picture;
+			let imgSrc = "img/huge.jpg"
 
 			AFRAME.registerComponent('app', {
 				schema: {type: 'string'},
 				init: function () {
 					picture = document.querySelector("#picture");
-
-					let img = new Image();
-
-					img.onload = function () {
-						getExif(img);
-					}
-
-					img.src = "img/china-pano-18.jpg";
+					loadPicture(imgSrc);
 				}
 			});
 
-			function getExif(img) {
+			function loadPicture(url) {
+				let img = new Image();
+
+				img.onload = function () {
+					getExif(img, url);
+				}
+
+				img.src = url;
+			}
+
+			function getExif(img, url) {
 				EXIF.getData(img, function() {
 					let width = EXIF.getTag(this, "PixelXDimension");
 					let height = EXIF.getTag(this, "PixelYDimension");
 					let focal = EXIF.getTag(this, "FocalLengthIn35mmFilm");
-					computeAttributes(width, height, focal);
+					let orientation = EXIF.getTag(this, "Orientation");
+					computeAttributes(url, width, height, focal, orientation);
 				});
 
 				EXIF.getData(img, function() {
 					let allMetaData = EXIF.getAllTags(this);
 					let allMetaDataSpan = document.getElementById("allMetaDataSpan");
-					//console.log(123, JSON.stringify(allMetaData, null, "\t"));
+					//console.log(JSON.stringify(allMetaData, null, "\t"));
 				});
 			}
 /*
@@ -53,7 +58,7 @@ Focal Length                    : 30.0 mm (35 mm equivalent: 45.0 mm)
 Hyperfocal Distance             : 4.99 m
 */
 
-			function computeAttributes(width, height, focal) {
+			function computeAttributes(url, width, height, focal, orientation) {
 				console.log(width, height, focal);
 				let format = [width, height];
 
@@ -68,30 +73,57 @@ Hyperfocal Distance             : 4.99 m
 					return [format[0] * sensor[1] / format[1], sensor[1]];
 				}
 
-				function getFOV(sensor) {
-					return 2 * Math.atan(diag(sensor[0], sensor[1]) / (2 * focal)) * 180 / Math.PI;
-				}
+				// function getFOV(sensor) {
+				// 	return 2 * Math.atan(diag(sensor[0], sensor[1]) / (2 * focal)) * 180 / Math.PI;
+				// }
 
 				let virtualSensor = getVirtualSensor(fullFrame, format);
-				let fov = getFOV(virtualSensor);
+				// let fov = getFOV(virtualSensor);
 				let fovPhi = 2 * Math.atan(virtualSensor[0] / (2 * focal)) * 180 / Math.PI;
+				if (virtualSensor[0] / (2 * focal) > Math.PI / 2) {
+					fovPhi += 180;
+				}
+
 				let fovTheta = 2 * Math.atan(virtualSensor[1] / (2 * focal)) * 180 / Math.PI;
-				let phiStart = - (90 + (fovPhi / 2));
-				let thetaStart = (180 - fovTheta) / 2;
+				let phiStart = -90 - (fovPhi / 2);
+				let thetaStart = 90 - fovTheta / 2;
+
+				switch (orientation) {
+					case 8:
+						picture.setAttribute("rotation", "0 0 -90");
+						break;
+					case 6:
+						picture.setAttribute("rotation", "0 0 90");
+						break;
+					case 3:
+						picture.setAttribute("rotation", "0 0 180");
+						break;
+					default:
+						picture.setAttribute("rotation", "0 0 0");
+						break;
+				}
 
 				picture.setAttribute('phi-start', phiStart);
 				picture.setAttribute('phi-length', fovPhi);
 				picture.setAttribute('theta-start', thetaStart);
 				picture.setAttribute('theta-length', fovTheta);
+				picture.setAttribute('src', url);
 
-				console.log(fov, fovPhi, fovTheta, phiStart, thetaStart);
+				console.log(fovPhi, fovTheta, phiStart, thetaStart);
+			}
+
+			function computeFitZoom() {
+				let camera = document.querySelector('#camera');
+				console.log(camera.fov);
 			}
 		</script>
 		<a-scene app>
 			<!--<a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg"></a-sky>-->
+			<a-sky color="#050505"></a-sky>
+			<a-camera id="camera" user-height="0"></a-camera>
 			<!--<a-sphere src="img/puydesancy.jpg" side="back" radius="4000"></a-sphere>-->
 			<!--<a-sphere src="img/china-18.jpg" side="back" radius="3900" phi-start="-123.25" phi-length="66.5" theta-start="66.57500" theta-length="46.85"></a-sphere>-->
-			<a-sphere id="picture" src="img/china-pano-18.jpg" side="back" radius="3900"></a-sphere>
+			<a-sphere id="picture" side="back" radius="10"></a-sphere>
 			<!--<img id="city" crossorigin="anonymous" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg">-->
 		</a-scene>
 	</body>
